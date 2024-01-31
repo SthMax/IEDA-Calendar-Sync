@@ -161,3 +161,4 @@ cython_debug/
 token.json
 credentials.json
 service.json
+settings.json

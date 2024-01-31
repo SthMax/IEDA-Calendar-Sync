@@ -1,7 +1,9 @@
 import datetime
 import json
+import logging
 import os.path
-import beautifulsoup4
+from bs4 import BeautifulSoup
+import urllib.request
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -11,7 +13,25 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
+SITE = "https://ieda.ust.hk/eng/event_detail.php?type=E&id="
+
+def scrapping(service, eventID):
+  # eventID = settings["eventID"]
+
+  contents = urllib.request.urlopen(SITE+str(eventID)).read()
+  soup = BeautifulSoup(contents, 'html.parser')
+
+  title = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar
+
+  if title == "":
+    logging.error("Title not found")
+    return None
+
+  if title.find("Seminar") == -1:
+    logging.info("Not a seminar")
+    return scrapping(service, eventID+1)
+
 
 
 def main():
@@ -19,24 +39,23 @@ def main():
   Prints the start and name of the next 10 events on the user's calendar.
   """
   creds = None
-  # The file token.json stores the user's access and refresh tokens, and is
-  # created automatically when the authorization flow completes for the first
-  # time.
-  if os.path.exists("token.json"):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-  # If there are no (valid) credentials available, let the user log in.
-  if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-      creds.refresh(Request())
-    else:
-      flow = InstalledAppFlow.from_client_secrets_file(
-          "credentials.json", SCOPES
-      )
-      creds = flow.run_local_server(port=0)
-    # Save the credentials for the next run
-    with open("token.json", "w") as token:
-      token.write(creds.to_json())
+  settings = None
 
+  if os.path.exists("settings.json"):
+    with open("settings.json", "r") as f:
+      settings = json.load(f)
+  else:
+    logging.error("settings.json not found")
+    return None
+
+  if os.path.exists("service.json"):
+    creds = service_account.Credentials.from_service_account_file(
+      "service.json", scopes=SCOPES
+    )
+  else:
+    logging.error("service.json not found")
+    return None
+  
   try:
     service = build("calendar", "v3", credentials=creds)
 
@@ -46,7 +65,7 @@ def main():
     events_result = (
         service.events()
         .list(
-            calendarId="primary",
+            calendarId=settings["calendarID"],
             timeMin=now,
             maxResults=10,
             singleEvents=True,
