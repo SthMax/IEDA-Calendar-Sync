@@ -14,19 +14,28 @@ from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
-SITE = "https://ieda.ust.hk/eng/event_detail.php?type=E&id="
+HOMEPAGE = "http://ieda.ust.hk/eng/events.php?catid=6&sid=50"
+SITE = "http://ieda.ust.hk/eng/event_detail.php?type=E&id="
 
-def scrapping(service, eventID):
-  # eventID = settings["eventID"]
+def scrapping(service, settings):
+  eventID = settings["eventID"]
+
+  HOMEPAGE = "http://ieda.ust.hk/eng/events.php?catid=6&sid=50"
+
+  contents = urllib.request.urlopen(HOMEPAGE).read()
+  soup = BeautifulSoup(contents, 'html.parser')
+
+  # Get the latest event ID
+  lastEventID = int(soup.find('div', class_='info-block__date active').attrs['data-tab'])
+
+  if eventID > lastEventID:
+    logging.info("No new event")
+    return None
 
   contents = urllib.request.urlopen(SITE+str(eventID)).read()
   soup = BeautifulSoup(contents, 'html.parser')
 
   title = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar
-
-  if title == "":
-    logging.error("Event not found")
-    return None
 
   if title.find("Seminar") == -1:
     logging.info("Not a seminar")
@@ -65,7 +74,7 @@ def main():
     events_result = (
         service.events()
         .list(
-            calendarId=settings["calendarID"],
+            calendarId=settings["calendarId"],
             timeMin=now,
             maxResults=10,
             singleEvents=True,
