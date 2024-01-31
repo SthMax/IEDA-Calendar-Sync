@@ -25,7 +25,7 @@ def scrapping(service, eventID):
   title = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar
 
   if title == "":
-    logging.error("Title not found")
+    logging.error("Event not found")
     return None
 
   if title.find("Seminar") == -1:
