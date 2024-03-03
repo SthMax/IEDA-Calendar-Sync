@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os.path
 from bs4 import BeautifulSoup
 import urllib.request
@@ -15,6 +16,15 @@ HOMEPAGE = "http://ieda.ust.hk/eng/events.php?catid=6&sid=50"
 SITE = "http://ieda.ust.hk/eng/event_detail.php?type=E&id="
 DEFAULT_TIME_INTERVAL = 1.5
 DEFAULT_ID_FORWAD = 3
+
+# Logging settings
+logger = logging.getLogger()    
+logger.setLevel(logging.INFO)
+
+rotate = TimedRotatingFileHandler('scrapping.log', when='D', interval=3, backupCount=0, encoding=None, delay=False, utc=False)
+logger.addHandler(rotate)
+formater = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
+rotate.setFormatter(formater)
 
 def constructEventBody(event):
   startTime = datetime.datetime.strptime(event["Date"] + " " + event["Time"].replace(".", "").capitalize(), "%d %B %Y (%A) %I:%M %p")
@@ -50,9 +60,9 @@ def constructEventBody(event):
 def adding(service, calendarID, event):
   try:
     event = service.events().insert(calendarId=calendarID, body=constructEventBody(event)).execute()
-    logging.info("Event created: %s" % (event.get("htmlLink")))
+    logger.info("Event created: %s" % (event.get("htmlLink")))
   except Exception as error:
-    logging.error(f"Error Occured when Adding: {error}")
+    logger.error(f"Error Occured when Adding: {error}")
 
 def scrapping(eventID):
   contents = urllib.request.urlopen(SITE+str(eventID)).read()
@@ -78,7 +88,7 @@ def scrapping(eventID):
   if speaker_bio is not None:
     event["Bio"] = speaker_bio.text.strip() #Bio
   else:
-    logging.info("No Bio for event at " + str(eventID))
+    logger.info("No Bio for event at " + str(eventID))
     event["Bio"] = ""
 
   event["Link"] = SITE+str(eventID) #Link
@@ -90,15 +100,13 @@ def main():
   creds = None
   settings = None
 
-  logging.basicConfig(filename='scrapping.log', level=logging.INFO)
-
-  logging.info("Run at " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+  logger.info("Run Started")
 
   if os.path.exists("settings.json"):
     with open("settings.json", "r") as f:
       settings = json.load(f)
   else:
-    logging.error("settings.json not found")
+    logger.error("settings.json not found")
     return None
 
   if os.path.exists("service.json"):
@@ -106,19 +114,19 @@ def main():
       "service.json", scopes=SCOPES
     )
   else:
-    logging.error("service.json not found")
+    logger.error("service.json not found")
     return None
   
   try:
     service = build("calendar", "v3", credentials=creds)
   except HttpError as error:
-    logging.error(f"Build Service Failed: {error}")
+    logger.error(f"Build Service Failed: {error}")
     return None
 
   try:
     contents = urllib.request.urlopen(HOMEPAGE).read()
   except Exception as error:
-    logging.error(f"Urllib error occurred: {error}")
+    logger.error(f"UrlLib error occurred: {error}")
     return None
   
   soup = BeautifulSoup(contents, 'html.parser')
@@ -126,27 +134,33 @@ def main():
   first_event = settings['last_eventID'] + 1
 
   if first_event > lastEventID:
-    logging.info("No new event")
+    logger.info("No new event, last event avaliable: " + str(lastEventID))
     return None
+
+  count = 0
 
   for i in range(first_event, lastEventID + DEFAULT_ID_FORWAD):
   # Get the latest event ID
     try:
       event = scrapping(i)
     except Exception as error:
-      logging.error(f"Error Occured when Scrapping: {error}")
-      logging.error(f"Event ID: {i}")
+      logger.error(f"Error Occured when Scrapping: {error}")
+      logger.error(f"Event ID: {i}")
       break
     
     if event is not None:
       settings['last_eventID'] = i
-      logging.info("Adding Event at " + SITE + str(i))
+      logger.info("Adding Event at " + SITE + str(i))
       adding(service, settings["calendarId"], event)
+      count += 1
     else:
-      logging.info("Invalid event at " + str(i))
+      logger.info("Invalid event at " + str(i))
   
   with open("settings.json", "w") as f:
     json.dump(settings, f)
+
+  logger.info("Run finished")
+  logger.info("Added " + str(count) + " events.")
 
 
 if __name__ == "__main__":
