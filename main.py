@@ -37,7 +37,7 @@ def constructEventBody(event):
       "dateTime": endTime.isoformat(),
       "timeZone": "Asia/Hong_Kong",
     },
-    "recurrence": ["RRULE:FREQ=DAILY;COUNT=1"],
+    # "recurrence": ["RRULE:FREQ=DAILY;COUNT=1"],
     "reminders": {
       "useDefault": False,
       "overrides": [
