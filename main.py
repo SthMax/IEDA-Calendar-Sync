@@ -133,7 +133,7 @@ def main():
   lastEventID = int(soup.find('div', class_='info-block__date active').attrs['data-tab'])
   first_event = settings['last_eventID'] + 1
 
-  if first_event > lastEventID:
+  if first_event > lastEventID + DEFAULT_ID_FORWAD:
     logger.info("No new event, last event avaliable: " + str(lastEventID))
     return None
 
