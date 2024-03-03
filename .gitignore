@@ -162,3 +162,5 @@ token.json
 credentials.json
 service.json
 settings.json
+*.log
+*.ipynb
