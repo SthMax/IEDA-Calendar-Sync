@@ -5,10 +5,7 @@ import os.path
 from bs4 import BeautifulSoup
 import urllib.request
 
-from google.auth.transport.requests import Request
 from google.oauth2 import service_account
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -63,13 +60,13 @@ def scrapping(eventID):
 
   event = dict()
 
-  eventType = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar / Seminar / Thesis Examination / etc
+  eventType = soup.find(class_='context__subtitle') #Joint OM/IE Seminar / Seminar / Thesis Examination / etc
 
   if eventType is None:
     logging.info("Invalid event at " + str(eventID))
     return None
   else:
-    event['Type'] = eventType
+    event['Type'] = eventType.text.strip()
 
   event["Title"] = soup.find(class_='context__title').text.strip() #Title
   
@@ -136,7 +133,13 @@ def main():
 
   for i in range(first_event, lastEventID + DEFAULT_ID_FORWAD):
   # Get the latest event ID
-    event = scrapping(i)
+    try:
+      event = scrapping(i)
+    except Exception as error:
+      logging.error(f"Error Occured when Scrapping: {error}")
+      logging.error(f"Event ID: {i}")
+      return
+    
     if event is not None:
       settings['last_eventID'] = i
       adding(service, settings["calendarId"], event)
