@@ -164,3 +164,4 @@ service.json
 settings.json
 *.log
 *.ipynb
+test.ipynb

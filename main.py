@@ -60,13 +60,12 @@ def scrapping(eventID):
 
   event = dict()
 
-  eventType = soup.find(class_='context__subtitle') #Joint OM/IE Seminar / Seminar / Thesis Examination / etc
+  eventType = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar / Seminar / Thesis Examination / etc
 
-  if eventType is None:
-    logging.info("Invalid event at " + str(eventID))
+  if eventType == "":
     return None
   else:
-    event['Type'] = eventType.text.strip()
+    event['Type'] = eventType
 
   event["Title"] = soup.find(class_='context__title').text.strip() #Title
   
@@ -85,7 +84,6 @@ def scrapping(eventID):
   event["Link"] = SITE+str(eventID) #Link
 
   return event
-
 
 
 def main():
@@ -138,11 +136,14 @@ def main():
     except Exception as error:
       logging.error(f"Error Occured when Scrapping: {error}")
       logging.error(f"Event ID: {i}")
-      return
+      break
     
     if event is not None:
       settings['last_eventID'] = i
+      logging.info("Adding Event at " + SITE + str(i))
       adding(service, settings["calendarId"], event)
+    else:
+      logging.info("Invalid event at " + str(i))
   
   with open("settings.json", "w") as f:
     json.dump(settings, f)
