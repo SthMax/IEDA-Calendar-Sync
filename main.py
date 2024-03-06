@@ -15,7 +15,7 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 HOMEPAGE = "http://ieda.ust.hk/eng/events.php?catid=6&sid=50"
 SITE = "http://ieda.ust.hk/eng/event_detail.php?type=E&id="
 DEFAULT_TIME_INTERVAL = 1.5
-DEFAULT_ID_FORWAD = 3
+DEFAULT_ID_FORWAD = 5
 
 # Logging settings
 logger = logging.getLogger()    
