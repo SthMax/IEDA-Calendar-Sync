@@ -75,6 +75,7 @@ def scrapping(eventID):
   if eventType == "":
     return None
   elif eventType == "News": #Skip News
+    logger.info("Skip News at " + str(eventID))
     return None
   else:
     event['Type'] = eventType
