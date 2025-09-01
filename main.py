@@ -21,7 +21,7 @@ DEFAULT_ID_FORWAD = 5
 logger = logging.getLogger()    
 logger.setLevel(logging.INFO)
 
-rotate = TimedRotatingFileHandler('scrapping.log', when='M', interval=1, backupCount=12, encoding="utf-8", delay=False, utc=False)
+rotate = TimedRotatingFileHandler('scrapping.log', when='D', interval=30, backupCount=12, encoding="utf-8", delay=False, utc=False)
 logger.addHandler(rotate)
 formater = logging.Formatter('%(asctime)s:%(levelname)s:%(message)s')
 rotate.setFormatter(formater)
