@@ -72,13 +72,21 @@ def scrapping(eventID):
 
   eventType = soup.find(class_='context__subtitle').text.strip() #Joint OM/IE Seminar / Seminar / Thesis Examination / etc
 
-  if eventType == "":
-    return None
-  elif eventType == "News": #Skip News
-    logger.info("Skip News at " + str(eventID))
-    return None
+  # Deprecated, seems a lot of bug
+  # if eventType == "":
+  #   logger.info("No Event Type at " + str(eventID))
+  #   return None
+  # elif eventType == "News": #Skip News
+  #   logger.info("Skip News at " + str(eventID))
+  #   return None
+  # else:
+  #   event['Type'] = eventType
+
+  if "Seminar" in eventType or "Examination" in eventType:
+    event["Type"] = eventType
   else:
-    event['Type'] = eventType
+    logger.info("Skip Non-Seminar/Examination at " + str(eventID))
+    return None
 
   event["Title"] = soup.find(class_='context__title').text.strip() #Title
   
